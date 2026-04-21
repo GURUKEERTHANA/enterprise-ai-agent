@@ -1,0 +1,93 @@
+[
+  {
+    "query_id": "q001",
+    "query": "How do I reset my VPN credentials?",
+    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
+    "department_id": "IT_OPS",
+    "category": "procedural"
+  },
+  {
+    "query_id": "q002",
+    "query": "What is the process for requesting a new software license?",
+    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
+    "department_id": "IT_OPS",
+    "category": "procedural"
+  },
+  {
+    "query_id": "q003",
+    "query": "Outlook is not syncing emails on mobile device",
+    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
+    "department_id": "IT_OPS",
+    "category": "factual"
+  },
+  {
+    "query_id": "q004",
+    "query": "password expiry policy for service accounts",
+    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
+    "department_id": "IT_OPS",
+    "category": "keyword"
+  },
+  {
+    "query_id": "q005",
+    "query": "How do I escalate a P1 incident outside business hours?",
+    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
+    "department_id": "IT_OPS",
+    "category": "procedural"
+  },
+  {
+    "query_id": "q006",
+    "query": "printer not connecting to network after Windows update",
+    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
+    "department_id": "IT_OPS",
+    "category": "factual"
+  },
+  {
+    "query_id": "q007",
+    "query": "What SLA applies to hardware replacement requests?",
+    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
+    "department_id": "IT_OPS",
+    "category": "factual"
+  },
+  {
+    "query_id": "q008",
+    "query": "multi-factor authentication setup for new employees",
+    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
+    "department_id": "IT_OPS",
+    "category": "keyword"
+  },
+  {
+    "query_id": "q009",
+    "query": "database connection timeout error in production",
+    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
+    "department_id": "IT_OPS",
+    "category": "keyword"
+  },
+  {
+    "query_id": "q010",
+    "query": "What is the data retention policy for incident records?",
+    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
+    "department_id": "IT_OPS",
+    "category": "factual"
+  },
+  {
+    "query_id": "q011",
+    "query": "How to request access to the finance reporting system?",
+    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
+    "department_id": "FINANCE",
+    "category": "procedural"
+  },
+  {
+    "query_id": "q012",
+    "query": "steps to onboard a new contractor to IT systems",
+    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
+    "department_id": "HR",
+    "category": "procedural"
+  },
+  {
+    "query_id": "q013",
+    "query": "What is the capital of France?",
+    "expected_chunk_ids": [],
+    "department_id": null,
+    "category": "out_of_scope"
+  }
+]
