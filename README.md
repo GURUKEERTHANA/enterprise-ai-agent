@@ -67,7 +67,7 @@ executing any database query.
 
 ## How to Run
 ```bash
-git clone https://github.com/YOUR_USERNAME/enterprise-ai-agent
+git clone https://github.com/kchintala-ai/enterprise-ai-agent
 cd enterprise-ai-agent
 pip install -r requirements.txt
 # Add your OpenAI API key to .env
