@@ -8,7 +8,7 @@ Evaluates retrieval quality against a golden eval set using:
     4. MRR      — Mean Reciprocal Rank (captures rank quality)
     5. Precision@5 — fraction of top-5 results that are relevant
 
-Interview talking point:
+Metric selection rationale::
     These metrics answer different questions:
     - Hit@1: precision — critical for single-answer agents
     - Hit@5: recall — what you feed to the reranker; low Hit@5 = reranker can't save you
@@ -100,7 +100,7 @@ class RAGEvaluator:
     returning objects with a .chunk_id attribute. Compatible with BM25Retriever,
     HybridRetriever, or any retriever implementing the same interface.
 
-    Interview talking point:
+    Note:
         We built this evaluator before optimizing our retriever — not after.
         Eval-first means every change to chunking, embedding model, BM25 parameters,
         or RRF k constant gets measured immediately. Without this, you're flying blind.
@@ -233,7 +233,7 @@ def load_eval_set(path: str) -> list[EvalQuery]:
             ...
         ]
 
-    Interview talking point:
+    Note:
         The eval set is version-controlled alongside the code.
         When we update chunk boundaries (re-chunk the corpus), chunk IDs change —
         we must re-verify ground truth manually. Stale chunk IDs silently zero out

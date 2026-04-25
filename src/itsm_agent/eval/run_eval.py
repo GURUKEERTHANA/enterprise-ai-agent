@@ -7,7 +7,7 @@ a comparison table. Use this to:
     - Compare BM25 vs dense vs hybrid vs hybrid+reranker
     - Catch eval set ground truth issues before they corrupt benchmarks
 
-Interview talking point:
+Notes:
     We run this before every merge to main. A >5% drop in MRR blocks the PR.
     This is the LLMOps equivalent of unit tests — it catches retrieval regressions
     before they reach production users.

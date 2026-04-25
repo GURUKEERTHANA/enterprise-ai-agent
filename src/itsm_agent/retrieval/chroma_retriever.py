@@ -29,3 +29,33 @@ def query_collection(
         kwargs["where"] = where
 
     return collection.query(**kwargs)
+
+
+def embed_text(text: str) -> list[float]:
+    response = openai_client.embeddings.create(input=[text], model="text-embedding-3-small")
+    return response.data[0].embedding
+
+
+def _load_chunks(collection) -> list[dict]:
+    result = collection.get(include=["documents", "metadatas"])
+    if not result["ids"]:
+        return []
+    metadatas = result["metadatas"] or [{}] * len(result["ids"])
+    return [
+        {"chunk_id": cid, "text": doc, "metadata": meta}
+        for cid, doc, meta in zip(result["ids"], result["documents"], metadatas)
+    ]
+
+
+from .bm25_retriever import BM25Retriever
+from .hybrid_retriever import HybridRetriever
+
+
+def _build_hybrid(collection, dense_top_k: int = 20) -> HybridRetriever:
+    bm25 = BM25Retriever()
+    bm25.index(_load_chunks(collection))
+    return HybridRetriever(bm25, collection, embed_text, bm25_top_k=20, dense_top_k=dense_top_k)
+
+
+kb_hybrid = _build_hybrid(kb_collection)
+incident_hybrid = _build_hybrid(incident_collection, dense_top_k=25)

@@ -6,7 +6,7 @@ from .router_schema import RouteAction
 from .registry import DEPARTMENT_REGISTRY
 from .llms import router_llm, synthesizer_llm
 from src.itsm_agent.guardrails.prompt_injection import check_prompt_injection
-from src.itsm_agent.retrieval.chroma_retriever import kb_collection, incident_collection, query_collection
+from src.itsm_agent.retrieval.chroma_retriever import kb_hybrid, incident_hybrid
 from src.itsm_agent.retrieval.reranker import reranker_model
 from src.itsm_agent.utils.latency import new_profiler
 
@@ -74,21 +74,16 @@ def kb_worker_node(state: AgentState) -> dict:
 
     print(f"--- KB WORKER: Authorized search in '{authorized_dept}' for '{query}' ---")
     try:
-        search_results = query_collection(
-            collection=kb_collection,
-            query=query,
-            n_results=3,
-            where={"department_id": authorized_dept},
-        )
-        candidates = search_results.get("documents", [[]])[0]
-        if not candidates:
+        results = kb_hybrid.retrieve(query, top_k=10, department_id=authorized_dept)
+        if not results:
             return {"kb_results": [], "security_violation": False}
 
+        candidates = [r.text for r in results]
         pairs = [[query, doc] for doc in candidates]
         scores = reranker_model.predict(pairs)
         scored = sorted(zip(scores, candidates), key=lambda x: x[0], reverse=True)
         top_docs = [doc for _, doc in scored[:3]]
-        print(f"--- RERANKER: Selected top {len(top_docs)} from {len(candidates)} KB candidates ---")
+        print(f"--- RERANKER: Selected top {len(top_docs)} from {len(candidates)} KB candidates (hybrid) ---")
     except Exception as e:
         top_docs = [f"Error retrieving KB records: {str(e)}"]
 
@@ -111,23 +106,18 @@ def incident_worker_node(state: AgentState) -> dict:
             "incident_results": [f"Violation: {requested_dept} vs {authorized_dept}"],
         }
 
-    print(f"--- INCIDENT WORKER: Multi-stage search in '{authorized_dept}' ---")
+    print(f"--- INCIDENT WORKER: Multi-stage hybrid search in '{authorized_dept}' ---")
     try:
-        search_results = query_collection(
-            collection=incident_collection,
-            query=query,
-            n_results=25,
-            where={"department_id": authorized_dept},
-        )
-        candidates = search_results.get("documents", [[]])[0]
-        if not candidates:
+        results = incident_hybrid.retrieve(query, top_k=25, department_id=authorized_dept)
+        if not results:
             return {"incident_results": [], "security_violation": False}
 
+        candidates = [r.text for r in results]
         pairs = [[query, doc] for doc in candidates]
         scores = reranker_model.predict(pairs)
         scored = sorted(zip(scores, candidates), key=lambda x: x[0], reverse=True)
         top_docs = [doc for _, doc in scored[:3]]
-        print(f"--- RERANKER: Selected top {len(top_docs)} from {len(candidates)} incident candidates ---")
+        print(f"--- RERANKER: Selected top {len(top_docs)} from {len(candidates)} incident candidates (hybrid) ---")
     except Exception as e:
         top_docs = [f"Error in incident retrieval: {str(e)}"]
 

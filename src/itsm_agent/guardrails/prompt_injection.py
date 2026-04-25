@@ -5,7 +5,7 @@ Detects attempts to hijack the ITSM agent's behavior through malicious
 user input. This is an input guardrail — runs BEFORE the query reaches
 the retriever or LLM.
 
-Interview talking point:
+Note:
     Prompt injection is the #1 security threat for production LLM applications.
     In enterprise ITSM, a successful injection could:
     - Leak incident data from other departments (tenant cross-contamination)
@@ -52,7 +52,7 @@ class PromptInjectionDetector:
     Runs pattern matching against known injection signatures.
     Designed to be fast (<1ms) and run on every query before retrieval.
 
-    Interview talking point:
+    Note:
         Why not use the LLM to detect injections?
         1. Cost: $0.002 per check × 10K queries/day = $20/day just for guardrails
         2. Latency: adds 800ms to every request
@@ -201,7 +201,7 @@ def check_prompt_injection(query: str) -> InjectionCheckResult:
                 return {**state, "blocked": True, "block_reason": result.injection_type}
             return {**state, "user_query": result.safe_query}
 
-    Interview talking point:
+    Note:
         This runs as the first node in every agent graph execution.
         If is_injection=True, the graph routes to a REFUSAL node, not the retriever.
         The user sees: "I can't help with that request" — no information about why,

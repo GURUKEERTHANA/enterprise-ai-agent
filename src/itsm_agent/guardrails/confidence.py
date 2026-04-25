@@ -4,7 +4,7 @@ Confidence Threshold Guardrail.
 Determines whether retrieved context is good enough to generate an answer,
 or whether the agent should abstain, escalate, or ask for clarification.
 
-Interview talking point:
+Notes:
     Hallucination happens when an LLM generates an answer despite having
     no relevant context. The fix is NOT a better prompt — it's a retrieval
     quality gate BEFORE the LLM call. If retrieval confidence is below threshold,
@@ -50,7 +50,7 @@ class ConfidenceEvaluator:
     Thresholds are tuned for ITSM KB + incident data. Adjust based on your
     eval set results — if your Hit@3 is 95%+ you can tighten the ANSWER threshold.
 
-    Interview talking point:
+    Notes:
         Threshold tuning is an eval-driven decision, not a gut-feel one.
         We run the eval set, plot score distributions for correct vs incorrect
         retrievals, and set thresholds at the intersection point.
@@ -199,7 +199,7 @@ def evaluate_confidence(retrieval_results: list, score_attr: str = "rrf_score") 
                 return {**state, "escalate": True, "reason": conf.reasoning}
             return {**state, "confidence": conf}
 
-    Interview talking point:
+    Notes:
         The confidence gate sits between the retriever and the LLM call.
         It's the single most important guardrail for preventing hallucination.
         We abort the LLM call entirely on ABSTAIN — no hallucination possible.

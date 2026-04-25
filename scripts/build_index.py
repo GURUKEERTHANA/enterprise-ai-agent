@@ -93,7 +93,7 @@ def main():
     for d in inc_docs:
         d["chunk_id"] = d.pop("incident_id")
     print(f"Total incident docs: {len(inc_docs)}")
-    embed_and_index(inc_docs, inc_col, id_key="chunk_id")
+    embed_and_index(inc_docs, inc_col, id_key="chunk_id", batch_size=100)
 
     print(f"\nDone. KB: {kb_col.count()} | Incidents: {inc_col.count()}")
 

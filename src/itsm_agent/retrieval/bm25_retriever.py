@@ -4,7 +4,7 @@ BM25 Retriever for ITSM corpus.
 Implements BM25 (Best Match 25) ranking over pre-chunked ITSM documents.
 Used as the keyword/exact-match leg of hybrid retrieval.
 
-Interview talking point:
+Notes:
     BM25 catches exact terminology — incident numbers, error codes, product names —
     that semantic embeddings miss because they compress meaning into vectors.
     In ITSM, a user searching for 'ORA-12541 error' needs exact match, not semantic similarity.
@@ -37,7 +37,7 @@ class BM25Retriever:
         b  (float): Document length normalization. Default 0.75.
                     1.0 = full normalization. 0.0 = no normalization.
 
-    Interview talking point:
+    Notes:
         k1=1.5, b=0.75 are empirically validated defaults from the original paper.
         For short ITSM chunks (avg ~200 tokens), b=0.75 is appropriate — chunks are
         similar in length so length normalization matters less than in web search.
@@ -118,7 +118,7 @@ class BM25Retriever:
         Returns:
             List of BM25Result sorted by score descending.
 
-        Interview talking point:
+        Notes:
             Pre-filtering by department_id BEFORE scoring is critical for security.
             Post-filtering (score all, then filter) leaks document existence across tenants
             via timing side-channels and wastes compute on unauthorized chunks.
@@ -201,7 +201,7 @@ class BM25Retriever:
         """
         Simple whitespace + punctuation tokenizer with lowercasing.
 
-        Interview talking point:
+        Notes:
             For ITSM, we deliberately keep numbers and alphanumeric strings intact
             (e.g., 'INC0012345', 'ORA-12541') because these are high-signal identifiers.
             A stemmer would break them. BM25's strength in ITSM is exact-match on these.

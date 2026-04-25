@@ -4,7 +4,7 @@ Hybrid Retriever — RRF fusion of BM25 + ChromaDB dense retrieval.
 Implements Reciprocal Rank Fusion (RRF) to combine ranked results from
 two complementary retrievers into a single merged ranking.
 
-Interview talking point:
+Notes:
     BM25 catches exact terminology (incident IDs, error codes, product names).
     Dense retrieval catches semantic similarity (paraphrased questions, conceptual queries).
     RRF is rank-based not score-based — this is critical because BM25 scores (e.g. 18.4)
@@ -98,7 +98,7 @@ class HybridRetriever:
         Returns:
             List of HybridResult sorted by RRF score descending.
 
-        Interview talking point:
+        Notes:
             We retrieve 20 candidates from each retriever (not just 5) before fusion.
             This is because a document ranked #15 in BM25 but #1 in dense retrieval
             should score well after fusion. Fetching only top_k from each would miss it.
@@ -129,7 +129,7 @@ class HybridRetriever:
 
         Returns list of dicts with keys: chunk_id, text, score, metadata.
 
-        Interview talking point:
+        Notes:
             We pass query_embeddings (pre-computed OpenAI vector), NOT query_texts.
             ChromaDB's built-in embedding model is 384-dim; OpenAI text-embedding-3-small
             is 1536-dim. Passing query_texts would cause a dimension mismatch error.
@@ -189,7 +189,7 @@ class HybridRetriever:
         Documents appearing in both lists get additive scores — they are rewarded
         for cross-retriever agreement.
 
-        Interview talking point:
+        Notes:
             If a chunk appears in BOTH BM25 top-5 and dense top-5, it almost certainly
             deserves to be in the final top-5. RRF captures this intuition mathematically.
             Score from BM25-only rank-1: 1/61 ≈ 0.0164

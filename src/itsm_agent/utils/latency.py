@@ -4,7 +4,7 @@ Latency Profiling Utilities.
 Provides decorators and context managers for measuring execution time
 across all pipeline stages: embedding, retrieval, reranking, LLM call.
 
-Interview talking point:
+Notes:
     In our ITSM agent profiling, LLM calls account for ~76% of total latency,
     embedding API ~21%, and local compute (BM25, reranking, RRF) ~3%.
 
@@ -50,7 +50,7 @@ class LatencyProfiler:
 
         profiler.report()  # prints breakdown table
 
-    Interview talking point:
+    Notes:
         We instrument every stage with a context manager rather than
         wrapping functions. This keeps the measurement logic orthogonal
         to the business logic — we can add/remove profiling without
