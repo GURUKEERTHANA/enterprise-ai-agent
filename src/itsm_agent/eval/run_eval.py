@@ -33,6 +33,9 @@ from pathlib import Path
 # Add project root to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from src.itsm_agent.eval.evaluator import RAGEvaluator, EvalReport, load_eval_set
 
 
@@ -113,7 +116,7 @@ def run_evaluation(
         return response.data[0].embedding
 
     chroma_client = chromadb.PersistentClient(path=chroma_path)
-    collection = chroma_client.get_collection("itsm_chunks")
+    collection = chroma_client.get_collection("kb_articles")
 
     # Import retrievers
     from src.itsm_agent.retrieval.bm25_retriever import BM25Retriever
@@ -181,7 +184,7 @@ def main():
     )
     parser.add_argument(
         "--chroma-path",
-        default="data/chroma_db",
+        default="data/processed/chromadb",
         help="Path to ChromaDB persistent storage"
     )
     parser.add_argument(

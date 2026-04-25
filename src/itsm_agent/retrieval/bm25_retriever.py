@@ -131,7 +131,7 @@ class BM25Retriever:
 
         for idx, chunk in enumerate(self._chunks):
             # Multi-tenancy: skip chunks outside the requesting department
-            if department_id and chunk.get("metadata", {}).get("department_id") != department_id:
+            if department_id and chunk.get("metadata", {}).get("department_id", "").strip() != department_id.strip():
                 continue
 
             score = self._score(query_tokens, idx)

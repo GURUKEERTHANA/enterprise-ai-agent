@@ -2,85 +2,85 @@
   {
     "query_id": "q001",
     "query": "How do I reset my VPN credentials?",
-    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
-    "department_id": "IT_OPS",
+    "expected_chunk_ids": ["KB0082877_chunk_0"],
+    "department_id": "Global Protect",
     "category": "procedural"
   },
   {
     "query_id": "q002",
     "query": "What is the process for requesting a new software license?",
-    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
-    "department_id": "IT_OPS",
+    "expected_chunk_ids": ["KB0051241_chunk_0", "KB0080552_chunk_12"],
+    "department_id": "ITAM",
     "category": "procedural"
   },
   {
     "query_id": "q003",
     "query": "Outlook is not syncing emails on mobile device",
-    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
-    "department_id": "IT_OPS",
+    "expected_chunk_ids": ["KB0057047_chunk_0"],
+    "department_id": "Outlook",
     "category": "factual"
   },
   {
     "query_id": "q004",
     "query": "password expiry policy for service accounts",
-    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
-    "department_id": "IT_OPS",
+    "expected_chunk_ids": ["KB0056812_chunk_6"],
+    "department_id": "Systems",
     "category": "keyword"
   },
   {
     "query_id": "q005",
     "query": "How do I escalate a P1 incident outside business hours?",
-    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
-    "department_id": "IT_OPS",
+    "expected_chunk_ids": ["KB0050698_chunk_5"],
+    "department_id": "Support",
     "category": "procedural"
   },
   {
     "query_id": "q006",
     "query": "printer not connecting to network after Windows update",
-    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
-    "department_id": "IT_OPS",
+    "expected_chunk_ids": ["KB0087088_chunk_9", "KB0087088_chunk_7"],
+    "department_id": "Support",
     "category": "factual"
   },
   {
     "query_id": "q007",
     "query": "What SLA applies to hardware replacement requests?",
-    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
-    "department_id": "IT_OPS",
+    "expected_chunk_ids": ["KB0058890_chunk_13"],
+    "department_id": "ITAM",
     "category": "factual"
   },
   {
     "query_id": "q008",
     "query": "multi-factor authentication setup for new employees",
-    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
-    "department_id": "IT_OPS",
+    "expected_chunk_ids": ["KB0077277_chunk_0"],
+    "department_id": "Security",
     "category": "keyword"
   },
   {
     "query_id": "q009",
     "query": "database connection timeout error in production",
-    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
-    "department_id": "IT_OPS",
+    "expected_chunk_ids": ["KBSGC0000008_chunk_3", "KBSGC0000008_chunk_2"],
+    "department_id": "SGC MID Troubleshooting",
     "category": "keyword"
   },
   {
     "query_id": "q010",
     "query": "What is the data retention policy for incident records?",
-    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
-    "department_id": "IT_OPS",
+    "expected_chunk_ids": ["KB0056737_chunk_0"],
+    "department_id": "Policy",
     "category": "factual"
   },
   {
     "query_id": "q011",
     "query": "How to request access to the finance reporting system?",
-    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
-    "department_id": "FINANCE",
+    "expected_chunk_ids": ["KB0085042_chunk_0", "KB0085159_chunk_0", "KB0085054_chunk_0"],
+    "department_id": "SAP",
     "category": "procedural"
   },
   {
     "query_id": "q012",
     "query": "steps to onboard a new contractor to IT systems",
-    "expected_chunk_ids": ["kb_REPLACE_WITH_REAL_ID"],
-    "department_id": "HR",
+    "expected_chunk_ids": ["KB0054699_chunk_8"],
+    "department_id": "Contingent Workers",
     "category": "procedural"
   },
   {
