@@ -14,7 +14,7 @@ Notes:
     - If BM25/reranker is significant: they're CPU-bound, consider async or precompute
 
     Without profiling, engineers guess wrong. This data is what justifies
-    architectural decisions in system design interviews.
+    architectural decisions
 
     ServiceNow equivalent: Performance analytics and transaction log timing in the platform.
 """
