@@ -6,21 +6,35 @@ from .router_schema import RouteAction
 from .registry import DEPARTMENT_REGISTRY
 from .llms import router_llm, synthesizer_llm
 from src.itsm_agent.guardrails.prompt_injection import check_prompt_injection
+from src.itsm_agent.guardrails.confidence import ConfidenceEvaluator, ConfidenceVerdict
+
+# RRF scores range 0.013–0.033 (not 0–1 like cosine similarity).
+# answer_threshold=0.020 → result in top-3 of at least one retriever.
+# escalate_threshold=0.014 → only barely in top-20 of one retriever.
+# score_gap_threshold=0.001 → true score tie (same rank in both retrievers).
+_confidence = ConfidenceEvaluator(
+    answer_threshold=0.020,
+    escalate_threshold=0.014,
+    score_gap_threshold=0.001,
+)
 from src.itsm_agent.retrieval.chroma_retriever import kb_hybrid, incident_hybrid
 from src.itsm_agent.retrieval.reranker import reranker_model
 from src.itsm_agent.utils.latency import new_profiler
 
 
 def validate_input_node(state: AgentState) -> dict:
+    profiler = new_profiler()
     user_query = state["messages"][-1].content if state.get("messages") else ""
-    result = check_prompt_injection(user_query)
+    with profiler.measure("injection_check"):
+        result = check_prompt_injection(user_query)
     if result.is_injection:
         return {
             "blocked": True,
             "final_answer": "I can't help with that request.",
             "block_reason": result.injection_type,
+            "profiler": profiler,
         }
-    return {"blocked": False, "profiler": new_profiler()}
+    return {"blocked": False, "profiler": profiler}
 
 
 def router_node(state: AgentState) -> dict:
@@ -48,10 +62,20 @@ You are a ServiceNow Router. Your task is to map queries to the correct departme
 """
     structured_router = router_llm.with_structured_output(RouteAction, method="function_calling")
     user_message = state["messages"][-1].content
-    decision: RouteAction = structured_router.invoke([
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_message},
-    ])
+
+    profiler = state.get("profiler")
+    if profiler:
+        with profiler.measure("router_llm"):
+            decision: RouteAction = structured_router.invoke([
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ])
+    else:
+        decision: RouteAction = structured_router.invoke([
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_message},
+        ])
+
     print(f"--- ROUTING DECISION: {decision.source_type} | {decision.department_id} ---")
     return {"route": decision}
 
@@ -64,6 +88,7 @@ def kb_worker_node(state: AgentState) -> dict:
     query = route.refined_query
     requested_dept = route.department_id
     authorized_dept = state.get("verified_tenant_id", "UNKNOWN_TENANT")
+    profiler = state.get("profiler")
 
     if requested_dept and requested_dept != authorized_dept:
         print(f"--- SECURITY BLOCK: {authorized_dept} attempted to query {requested_dept} ---")
@@ -74,13 +99,32 @@ def kb_worker_node(state: AgentState) -> dict:
 
     print(f"--- KB WORKER: Authorized search in '{authorized_dept}' for '{query}' ---")
     try:
-        results = kb_hybrid.retrieve(query, top_k=10, department_id=authorized_dept)
+        if profiler:
+            with profiler.measure("hybrid_retrieval"):
+                results = kb_hybrid.retrieve(query, top_k=10, department_id=authorized_dept)
+        else:
+            results = kb_hybrid.retrieve(query, top_k=10, department_id=authorized_dept)
+
         if not results:
             return {"kb_results": [], "security_violation": False}
 
+        conf = _confidence.evaluate(results, score_attr="rrf_score")
+        print(f"--- CONFIDENCE (KB): {conf.verdict.value} | top={conf.top_score:.3f} | gap={conf.score_gap:.3f} ---")
+        if conf.verdict in (ConfidenceVerdict.ABSTAIN, ConfidenceVerdict.ESCALATE):
+            return {
+                "security_violation": False,
+                "kb_results": [conf.escalation_message],
+                "escalate": True,
+            }
+
         candidates = [r.text for r in results]
         pairs = [[query, doc] for doc in candidates]
-        scores = reranker_model.predict(pairs)
+        if profiler:
+            with profiler.measure("reranking"):
+                scores = reranker_model.predict(pairs)
+        else:
+            scores = reranker_model.predict(pairs)
+
         scored = sorted(zip(scores, candidates), key=lambda x: x[0], reverse=True)
         top_docs = [doc for _, doc in scored[:3]]
         print(f"--- RERANKER: Selected top {len(top_docs)} from {len(candidates)} KB candidates (hybrid) ---")
@@ -98,6 +142,7 @@ def incident_worker_node(state: AgentState) -> dict:
     query = route.refined_query
     authorized_dept = state.get("verified_tenant_id", "UNKNOWN_TENANT")
     requested_dept = route.department_id
+    profiler = state.get("profiler")
 
     if requested_dept and requested_dept != authorized_dept:
         print(f"--- SECURITY BLOCK (INCIDENT): Access denied for {requested_dept} ---")
@@ -108,13 +153,32 @@ def incident_worker_node(state: AgentState) -> dict:
 
     print(f"--- INCIDENT WORKER: Multi-stage hybrid search in '{authorized_dept}' ---")
     try:
-        results = incident_hybrid.retrieve(query, top_k=25, department_id=authorized_dept)
+        if profiler:
+            with profiler.measure("hybrid_retrieval"):
+                results = incident_hybrid.retrieve(query, top_k=25, department_id=authorized_dept)
+        else:
+            results = incident_hybrid.retrieve(query, top_k=25, department_id=authorized_dept)
+
         if not results:
             return {"incident_results": [], "security_violation": False}
 
+        conf = _confidence.evaluate(results, score_attr="rrf_score")
+        print(f"--- CONFIDENCE (INCIDENT): {conf.verdict.value} | top={conf.top_score:.3f} | gap={conf.score_gap:.3f} ---")
+        if conf.verdict in (ConfidenceVerdict.ABSTAIN, ConfidenceVerdict.ESCALATE):
+            return {
+                "security_violation": False,
+                "incident_results": [conf.escalation_message],
+                "escalate": True,
+            }
+
         candidates = [r.text for r in results]
         pairs = [[query, doc] for doc in candidates]
-        scores = reranker_model.predict(pairs)
+        if profiler:
+            with profiler.measure("reranking"):
+                scores = reranker_model.predict(pairs)
+        else:
+            scores = reranker_model.predict(pairs)
+
         scored = sorted(zip(scores, candidates), key=lambda x: x[0], reverse=True)
         top_docs = [doc for _, doc in scored[:3]]
         print(f"--- RERANKER: Selected top {len(top_docs)} from {len(candidates)} incident candidates (hybrid) ---")
@@ -125,6 +189,18 @@ def incident_worker_node(state: AgentState) -> dict:
 
 
 def synthesizer_node(state: AgentState) -> dict:
+    profiler = state.get("profiler")
+
+    if state.get("escalate"):
+        kb_data = state.get("kb_results", [])
+        inc_data = state.get("incident_results", [])
+        msg = (kb_data or inc_data or [
+            "I'm unable to find a reliable answer. Please contact support directly or raise a ticket."
+        ])[0]
+        if profiler:
+            print(profiler.report())
+        return {"final_answer": msg}
+
     kb_data = state.get("kb_results", [])
     inc_data = state.get("incident_results", [])
 
@@ -148,7 +224,13 @@ INSTRUCTIONS:
 3. Use an authoritative, helpful tone.
 4. If the context is 'NO DATA FOUND', only then state that you couldn't find a record.
 """
-    response = synthesizer_llm.invoke(prompt)
+    if profiler:
+        with profiler.measure("llm_call"):
+            response = synthesizer_llm.invoke(prompt)
+        print(profiler.report())
+    else:
+        response = synthesizer_llm.invoke(prompt)
+
     return {"final_answer": response.content}
 
 
