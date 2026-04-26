@@ -155,9 +155,9 @@ def incident_worker_node(state: AgentState) -> dict:
     try:
         if profiler:
             with profiler.measure("hybrid_retrieval"):
-                results = incident_hybrid.retrieve(query, top_k=25, department_id=authorized_dept)
+                results = incident_hybrid.retrieve(query, top_k=10, department_id=authorized_dept)
         else:
-            results = incident_hybrid.retrieve(query, top_k=25, department_id=authorized_dept)
+            results = incident_hybrid.retrieve(query, top_k=10, department_id=authorized_dept)
 
         if not results:
             return {"incident_results": [], "security_violation": False}

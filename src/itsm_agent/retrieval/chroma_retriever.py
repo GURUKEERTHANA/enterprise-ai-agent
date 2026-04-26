@@ -58,4 +58,4 @@ def _build_hybrid(collection, dense_top_k: int = 20) -> HybridRetriever:
 
 
 kb_hybrid = _build_hybrid(kb_collection)
-incident_hybrid = _build_hybrid(incident_collection, dense_top_k=25)
+incident_hybrid = _build_hybrid(incident_collection)
