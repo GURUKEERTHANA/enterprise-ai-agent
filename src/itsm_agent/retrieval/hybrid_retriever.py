@@ -18,8 +18,9 @@ RRF formula:
     This prevents any single top result from dominating the fusion.
 """
 
+import asyncio
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Awaitable, Callable, Optional
 
 from .bm25_retriever import BM25Retriever, BM25Result
 
@@ -56,12 +57,14 @@ class HybridRetriever:
         bm25_retriever: BM25Retriever,
         chroma_collection,          # chromadb.Collection
         embedder,                   # callable: text -> list[float]
+        async_embedder: Optional[Callable[[str], Awaitable[list[float]]]] = None,
         bm25_top_k: int = 20,       # candidates from BM25 before fusion
         dense_top_k: int = 20,      # candidates from ChromaDB before fusion
     ):
         self.bm25 = bm25_retriever
         self.chroma = chroma_collection
         self.embedder = embedder
+        self.async_embedder = async_embedder
         self.bm25_top_k = bm25_top_k
         self.dense_top_k = dense_top_k
 
@@ -115,6 +118,42 @@ class HybridRetriever:
         # --- Step 3: RRF fusion ---
         return self._rrf_fuse(bm25_results, dense_results, top_k=top_k)
 
+    async def aretrieve(
+        self,
+        query: str,
+        top_k: int = 5,
+        department_id: Optional[str] = None,
+        profiler=None,
+    ) -> list[HybridResult]:
+        """
+        Async hybrid retrieval. Runs BM25 (CPU-bound, off-loop) and dense
+        retrieval (network I/O) concurrently via asyncio.gather, then fuses
+        with RRF. Cuts wall-clock retrieval to max(BM25, dense) instead of sum.
+
+        If a profiler is provided, inner stages (bm25_retrieval, embedding_query,
+        chroma_retrieval, rrf_fusion) are timed individually so the latency
+        breakdown surfaces the embedding-API share separately from local compute.
+        """
+        async def timed_bm25():
+            if profiler is not None:
+                with profiler.measure("bm25_retrieval"):
+                    return await asyncio.to_thread(
+                        self.bm25.retrieve, query, self.bm25_top_k, department_id
+                    )
+            return await asyncio.to_thread(
+                self.bm25.retrieve, query, self.bm25_top_k, department_id
+            )
+
+        bm25_results, dense_results = await asyncio.gather(
+            timed_bm25(),
+            self._adense_retrieve(query, department_id=department_id, profiler=profiler),
+        )
+
+        if profiler is not None:
+            with profiler.measure("rrf_fusion"):
+                return self._rrf_fuse(bm25_results, dense_results, top_k=top_k)
+        return self._rrf_fuse(bm25_results, dense_results, top_k=top_k)
+
     # ------------------------------------------------------------------
     # Dense retrieval
     # ------------------------------------------------------------------
@@ -166,6 +205,59 @@ class HybridRetriever:
                     "metadata": results["metadatas"][0][i] if results["metadatas"] else {}
                 })
 
+        return dense_results
+
+    async def _adense_retrieve(
+        self,
+        query: str,
+        department_id: Optional[str] = None,
+        profiler=None,
+    ) -> list[dict]:
+        """
+        Async dense retrieval. The embedding call is true async I/O via
+        AsyncOpenAI; the ChromaDB query is sync and off-loaded to a thread.
+        """
+        where_filter = None
+        if department_id:
+            where_filter = {"department_id": {"$eq": department_id}}
+
+        if profiler is not None:
+            with profiler.measure("embedding_query"):
+                if self.async_embedder is not None:
+                    query_embedding = await self.async_embedder(query)
+                else:
+                    query_embedding = await asyncio.to_thread(self.embedder, query)
+        else:
+            if self.async_embedder is not None:
+                query_embedding = await self.async_embedder(query)
+            else:
+                query_embedding = await asyncio.to_thread(self.embedder, query)
+
+        chroma_call = asyncio.to_thread(
+            lambda: self.chroma.query(
+                query_embeddings=[query_embedding],
+                n_results=self.dense_top_k,
+                where=where_filter,
+                include=["documents", "metadatas", "distances"],
+            )
+        )
+        if profiler is not None:
+            with profiler.measure("chroma_retrieval"):
+                results = await chroma_call
+        else:
+            results = await chroma_call
+
+        dense_results: list[dict] = []
+        if results["ids"] and results["ids"][0]:
+            for i, chunk_id in enumerate(results["ids"][0]):
+                distance = results["distances"][0][i]
+                similarity = 1.0 / (1.0 + distance)
+                dense_results.append({
+                    "chunk_id": chunk_id,
+                    "text": results["documents"][0][i],
+                    "score": similarity,
+                    "metadata": results["metadatas"][0][i] if results["metadatas"] else {},
+                })
         return dense_results
 
     # ------------------------------------------------------------------

@@ -57,9 +57,26 @@ class LatencyProfiler:
         changing the pipeline code.
     """
 
+    # Stage-name → coarse category. Order matters: first matching prefix wins.
+    # The category buckets are what produces the headline "76 / 21 / 3" split
+    # (LLM / Embedding / Local compute) — see category_summary().
+    _CATEGORY_RULES: list[tuple[str, tuple[str, ...]]] = [
+        ("llm",           ("llm_call", "router_llm", "synthesizer_llm")),
+        ("embedding",     ("embedding_query", "embed")),
+        ("local_compute", ("bm25", "chroma", "rrf", "rerank", "injection")),
+    ]
+
     def __init__(self):
         self._records: list[LatencyRecord] = []
         self._stage_totals: dict[str, list[float]] = defaultdict(list)
+
+    @classmethod
+    def _categorize(cls, stage: str) -> str:
+        s = stage.lower()
+        for category, prefixes in cls._CATEGORY_RULES:
+            if any(p in s for p in prefixes):
+                return category
+        return "other"
 
     @contextmanager
     def measure(self, stage: str, **metadata):
@@ -109,22 +126,48 @@ class LatencyProfiler:
             }
         return summary
 
+    def category_summary(self) -> dict[str, dict]:
+        """
+        Coarse breakdown by category (llm / embedding / local_compute / other).
+
+        This is the headline view that gives the LLM/Embedding/Local split —
+        the one architectural-decision number to optimize against.
+        """
+        total = self.total_ms()
+        buckets: dict[str, float] = defaultdict(float)
+        for stage, durations in self._stage_totals.items():
+            buckets[self._categorize(stage)] += sum(durations)
+        return {
+            category: {
+                "total_ms": round(ms, 2),
+                "pct_of_total": round((ms / total * 100) if total > 0 else 0, 1),
+            }
+            for category, ms in buckets.items()
+        }
+
     def report(self, title: str = "Latency Breakdown") -> str:
         """
-        Generate a formatted latency report string.
+        Generate a formatted latency report string with per-stage timings
+        and a coarse category breakdown (LLM / Embedding / Local compute).
 
         Example output:
-            ─────────────────────────────────────────────────
-            Latency Breakdown — Total: 1,243ms
-            ─────────────────────────────────────────────────
-            Stage                  Total     Mean   Count    %
-            injection_check          0.3ms    0.3ms      1   0%
-            embedding_query         94.1ms   94.1ms      1   8%
-            bm25_retrieval           2.1ms    2.1ms      1   0%
-            chroma_retrieval        41.2ms   41.2ms      1   3%
-            rrf_fusion               0.4ms    0.4ms      1   0%
-            llm_call               945.8ms  945.8ms      1  76%
-            ─────────────────────────────────────────────────
+            ────────────────────────────────────────────────────────────
+            Latency Breakdown — Total: 1,250.0ms
+            ────────────────────────────────────────────────────────────
+            Stage                          Total      Mean   Count    %
+            llm_call                       950.0ms   950.0ms     1   76%
+            embedding_query                263.0ms   263.0ms     1   21%
+            chroma_retrieval                25.0ms    25.0ms     1    2%
+            reranking                        8.0ms     8.0ms     1    1%
+            bm25_retrieval                   2.0ms     2.0ms     1    0%
+            rrf_fusion                       1.7ms     1.7ms     1    0%
+            injection_check                  0.3ms     0.3ms     1    0%
+            ────────────────────────────────────────────────────────────
+            By category:
+            llm                            950.0ms   76%
+            embedding                      263.0ms   21%
+            local_compute                   37.0ms    3%
+            ────────────────────────────────────────────────────────────
         """
         summary = self.stage_summary()
         total = self.total_ms()
@@ -143,6 +186,19 @@ class LatencyProfiler:
                 f"{stats['mean_ms']:>7.1f}ms  {stats['count']:>5}  "
                 f"{stats['pct_of_total']:>3.0f}%"
             )
+
+        cat_summary = self.category_summary()
+        if cat_summary:
+            lines.append("─" * 60)
+            lines.append("By category:")
+            ordered = sorted(
+                cat_summary.items(), key=lambda x: x[1]["total_ms"], reverse=True
+            )
+            for category, stats in ordered:
+                lines.append(
+                    f"{category:<28} {stats['total_ms']:>7.1f}ms  "
+                    f"{stats['pct_of_total']:>3.0f}%"
+                )
 
         lines.append("─" * 60)
         return "\n".join(lines)
@@ -163,6 +219,9 @@ class LatencyProfiler:
         for stage, stats in self.stage_summary().items():
             result[f"{stage}_ms"] = stats["mean_ms"]
             result[f"{stage}_pct"] = stats["pct_of_total"]
+        for category, stats in self.category_summary().items():
+            result[f"cat_{category}_ms"] = stats["total_ms"]
+            result[f"cat_{category}_pct"] = stats["pct_of_total"]
         return result
 
 

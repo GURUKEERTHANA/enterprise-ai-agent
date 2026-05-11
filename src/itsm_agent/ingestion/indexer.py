@@ -5,12 +5,18 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from openai import OpenAI
 from tqdm import tqdm
 
+from src.itsm_agent.guardrails.prompt_injection import check_prompt_injection
+
 
 def chunk_documents(documents: list[dict], chunk_size: int = 512,
                     chunk_overlap: int = 50) -> list[dict]:
     """
     Split documents into chunks using RecursiveCharacterTextSplitter.
     Preserves metadata (department_id, source, sys_id) on each chunk.
+
+    Drops chunks whose text matches a prompt-injection pattern (indirect
+    injection from attacker-planted KB/incident content). Counts are logged
+    by injection type for audit.
     """
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
@@ -18,9 +24,15 @@ def chunk_documents(documents: list[dict], chunk_size: int = 512,
         length_function=len,
     )
     chunks = []
+    dropped_by_type: dict[str, int] = {}
     for doc in documents:
         splits = splitter.split_text(doc["content"])
         for i, split in enumerate(splits):
+            scan = check_prompt_injection(split)
+            if scan.is_injection:
+                key = scan.injection_type.value if scan.injection_type else "unknown"
+                dropped_by_type[key] = dropped_by_type.get(key, 0) + 1
+                continue
             chunks.append({
                 "chunk_id": f"{doc['sys_id']}_chunk_{i}",
                 "text": split,
@@ -32,6 +44,12 @@ def chunk_documents(documents: list[dict], chunk_size: int = 512,
                     "short_description": doc.get("short_description", ""),
                 }
             })
+    if dropped_by_type:
+        total_dropped = sum(dropped_by_type.values())
+        print(
+            f"[INGESTION GUARD] Dropped {total_dropped} chunk(s) with injection patterns: "
+            + ", ".join(f"{k}={v}" for k, v in dropped_by_type.items())
+        )
     return chunks
 
 

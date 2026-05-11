@@ -1,11 +1,12 @@
 # src/itsm_agent/retrieval/chroma_retriever.py
 import os
 import chromadb
-from openai import OpenAI
+from openai import OpenAI, AsyncOpenAI
 
 _CHROMA_PATH = os.environ.get("CHROMA_PATH", "data/processed/chromadb")
 
 openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+async_openai_client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 chroma_client = chromadb.PersistentClient(path=_CHROMA_PATH)
 
 kb_collection = chroma_client.get_or_create_collection(name="kb_articles")
@@ -36,6 +37,13 @@ def embed_text(text: str) -> list[float]:
     return response.data[0].embedding
 
 
+async def aembed_text(text: str) -> list[float]:
+    response = await async_openai_client.embeddings.create(
+        input=[text], model="text-embedding-3-small"
+    )
+    return response.data[0].embedding
+
+
 def _load_chunks(collection) -> list[dict]:
     result = collection.get(include=["documents", "metadatas"])
     if not result["ids"]:
@@ -54,7 +62,14 @@ from .hybrid_retriever import HybridRetriever
 def _build_hybrid(collection, dense_top_k: int = 20) -> HybridRetriever:
     bm25 = BM25Retriever()
     bm25.index(_load_chunks(collection))
-    return HybridRetriever(bm25, collection, embed_text, bm25_top_k=20, dense_top_k=dense_top_k)
+    return HybridRetriever(
+        bm25,
+        collection,
+        embed_text,
+        async_embedder=aembed_text,
+        bm25_top_k=20,
+        dense_top_k=dense_top_k,
+    )
 
 
 kb_hybrid = _build_hybrid(kb_collection)

@@ -3,6 +3,8 @@ import re
 import pandas as pd
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
+from src.itsm_agent.guardrails.prompt_injection import check_prompt_injection
+
 
 def chunk_articles(text: str, article_id: str, chunk_size: int = 512, overlap: int = 50) -> list[dict]:
     if not text or len(text) == 0:
@@ -23,6 +25,32 @@ def chunk_articles(text: str, article_id: str, chunk_size: int = 512, overlap: i
     ]
 
 
+def filter_injected_chunks(chunks: list[dict]) -> tuple[list[dict], list[dict]]:
+    """
+    Scan ingestion chunks for prompt-injection content (indirect injection
+    where attacker-planted text in a KB article or incident note tries to
+    hijack the agent at synthesis time). Drops matched chunks and returns
+    them separately for audit logging.
+
+    Returns:
+        (clean_chunks, dropped_chunks). Dropped chunks carry an extra
+        'injection_type' key for triage.
+    """
+    clean: list[dict] = []
+    dropped: list[dict] = []
+    for chunk in chunks:
+        result = check_prompt_injection(chunk.get("text", ""))
+        if result.is_injection:
+            dropped.append({
+                **chunk,
+                "injection_type": result.injection_type.value if result.injection_type else "unknown",
+                "matched_pattern": result.matched_pattern,
+            })
+        else:
+            clean.append(chunk)
+    return clean, dropped
+
+
 def build_kb_chunks(df_kb: pd.DataFrame) -> list[dict]:
     all_chunks = []
     for row in df_kb.itertuples():
@@ -40,7 +68,16 @@ def build_kb_chunks(df_kb: pd.DataFrame) -> list[dict]:
             seen_ids.add(chunk["chunk_id"])
             unique_chunks.append(chunk)
 
-    return unique_chunks
+    clean, dropped = filter_injected_chunks(unique_chunks)
+    if dropped:
+        by_type: dict[str, int] = {}
+        for d in dropped:
+            by_type[d["injection_type"]] = by_type.get(d["injection_type"], 0) + 1
+        print(
+            f"[INGESTION GUARD] Dropped {len(dropped)} KB chunk(s) with injection patterns: "
+            + ", ".join(f"{k}={v}" for k, v in by_type.items())
+        )
+    return clean
 
 
 def clean_incident_text(text: str) -> str:
@@ -83,4 +120,14 @@ def build_incident_doc(row) -> dict:
 
 
 def build_incident_docs(df_incidents: pd.DataFrame) -> list[dict]:
-    return [build_incident_doc(row) for _, row in df_incidents.iterrows()]
+    docs = [build_incident_doc(row) for _, row in df_incidents.iterrows()]
+    clean, dropped = filter_injected_chunks(docs)
+    if dropped:
+        by_type: dict[str, int] = {}
+        for d in dropped:
+            by_type[d["injection_type"]] = by_type.get(d["injection_type"], 0) + 1
+        print(
+            f"[INGESTION GUARD] Dropped {len(dropped)} incident doc(s) with injection patterns: "
+            + ", ".join(f"{k}={v}" for k, v in by_type.items())
+        )
+    return clean

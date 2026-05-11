@@ -1,6 +1,8 @@
 # src/itsm_agent/agent/nodes.py
 from __future__ import annotations
 
+import asyncio
+
 from .state import AgentState
 from .router_schema import RouteAction
 from .registry import DEPARTMENT_REGISTRY
@@ -22,7 +24,7 @@ from src.itsm_agent.retrieval.reranker import reranker_model
 from src.itsm_agent.utils.latency import new_profiler
 
 
-def validate_input_node(state: AgentState) -> dict:
+async def validate_input_node(state: AgentState) -> dict:
     profiler = new_profiler()
     user_query = state["messages"][-1].content if state.get("messages") else ""
     with profiler.measure("injection_check"):
@@ -37,7 +39,7 @@ def validate_input_node(state: AgentState) -> dict:
     return {"blocked": False, "profiler": profiler}
 
 
-def router_node(state: AgentState) -> dict:
+async def router_node(state: AgentState) -> dict:
     allowed_depts = ", ".join(DEPARTMENT_REGISTRY.keys())
     registry_parts = [
         f"DEPT: {dept}\nDESCRIPTION: {info['description']}\nKEYWORDS: {', '.join(info['keywords'])}"
@@ -66,12 +68,12 @@ You are a ServiceNow Router. Your task is to map queries to the correct departme
     profiler = state.get("profiler")
     if profiler:
         with profiler.measure("router_llm"):
-            decision: RouteAction = structured_router.invoke([
+            decision: RouteAction = await structured_router.ainvoke([
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message},
             ])
     else:
-        decision: RouteAction = structured_router.invoke([
+        decision: RouteAction = await structured_router.ainvoke([
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},
         ])
@@ -80,7 +82,7 @@ You are a ServiceNow Router. Your task is to map queries to the correct departme
     return {"route": decision}
 
 
-def kb_worker_node(state: AgentState) -> dict:
+async def kb_worker_node(state: AgentState) -> dict:
     route: RouteAction = state.get("route")
     if not route:
         return {"kb_results": ["Error: No routing instructions found."]}
@@ -99,11 +101,9 @@ def kb_worker_node(state: AgentState) -> dict:
 
     print(f"--- KB WORKER: Authorized search in '{authorized_dept}' for '{query}' ---")
     try:
-        if profiler:
-            with profiler.measure("hybrid_retrieval"):
-                results = kb_hybrid.retrieve(query, top_k=10, department_id=authorized_dept)
-        else:
-            results = kb_hybrid.retrieve(query, top_k=10, department_id=authorized_dept)
+        results = await kb_hybrid.aretrieve(
+            query, top_k=10, department_id=authorized_dept, profiler=profiler
+        )
 
         if not results:
             return {"kb_results": [], "security_violation": False}
@@ -121,9 +121,9 @@ def kb_worker_node(state: AgentState) -> dict:
         pairs = [[query, doc] for doc in candidates]
         if profiler:
             with profiler.measure("reranking"):
-                scores = reranker_model.predict(pairs)
+                scores = await asyncio.to_thread(reranker_model.predict, pairs)
         else:
-            scores = reranker_model.predict(pairs)
+            scores = await asyncio.to_thread(reranker_model.predict, pairs)
 
         scored = sorted(zip(scores, candidates), key=lambda x: x[0], reverse=True)
         top_docs = [doc for _, doc in scored[:3]]
@@ -134,7 +134,7 @@ def kb_worker_node(state: AgentState) -> dict:
     return {"security_violation": False, "kb_results": top_docs}
 
 
-def incident_worker_node(state: AgentState) -> dict:
+async def incident_worker_node(state: AgentState) -> dict:
     route: RouteAction = state.get("route")
     if not route:
         return {"incident_results": ["Error: No routing instructions found."]}
@@ -153,11 +153,9 @@ def incident_worker_node(state: AgentState) -> dict:
 
     print(f"--- INCIDENT WORKER: Multi-stage hybrid search in '{authorized_dept}' ---")
     try:
-        if profiler:
-            with profiler.measure("hybrid_retrieval"):
-                results = incident_hybrid.retrieve(query, top_k=10, department_id=authorized_dept)
-        else:
-            results = incident_hybrid.retrieve(query, top_k=10, department_id=authorized_dept)
+        results = await incident_hybrid.aretrieve(
+            query, top_k=10, department_id=authorized_dept, profiler=profiler
+        )
 
         if not results:
             return {"incident_results": [], "security_violation": False}
@@ -175,9 +173,9 @@ def incident_worker_node(state: AgentState) -> dict:
         pairs = [[query, doc] for doc in candidates]
         if profiler:
             with profiler.measure("reranking"):
-                scores = reranker_model.predict(pairs)
+                scores = await asyncio.to_thread(reranker_model.predict, pairs)
         else:
-            scores = reranker_model.predict(pairs)
+            scores = await asyncio.to_thread(reranker_model.predict, pairs)
 
         scored = sorted(zip(scores, candidates), key=lambda x: x[0], reverse=True)
         top_docs = [doc for _, doc in scored[:3]]
@@ -188,7 +186,7 @@ def incident_worker_node(state: AgentState) -> dict:
     return {"security_violation": False, "incident_results": top_docs}
 
 
-def synthesizer_node(state: AgentState) -> dict:
+async def synthesizer_node(state: AgentState) -> dict:
     profiler = state.get("profiler")
 
     if state.get("escalate"):
@@ -226,21 +224,21 @@ INSTRUCTIONS:
 """
     if profiler:
         with profiler.measure("llm_call"):
-            response = synthesizer_llm.invoke(prompt)
+            response = await synthesizer_llm.ainvoke(prompt)
         print(profiler.report())
     else:
-        response = synthesizer_llm.invoke(prompt)
+        response = await synthesizer_llm.ainvoke(prompt)
 
     return {"final_answer": response.content}
 
 
-def refusal_node(state: AgentState) -> dict:
+async def refusal_node(state: AgentState) -> dict:
     route: RouteAction | None = state.get("route")
     detail = route.refined_query if route else "I cannot assist with this."
     return {"final_answer": f"I'm sorry, I'm authorized only for ServiceNow ITSM and HR tasks. {detail}"}
 
 
-def security_alert_node(state: AgentState) -> dict:
+async def security_alert_node(state: AgentState) -> dict:
     violation_details = (state.get("kb_results") or state.get("incident_results") or [""])[0]
     prompt = f"""
 You are a strict Enterprise Security Assistant.
@@ -248,7 +246,7 @@ The user attempted to access restricted data.
 Write a brief, polite, but firm 'Access Denied' message.
 Details: {violation_details}
 """
-    response = router_llm.invoke(prompt)
+    response = await router_llm.ainvoke(prompt)
     return {"final_answer": response.content}
 
 
