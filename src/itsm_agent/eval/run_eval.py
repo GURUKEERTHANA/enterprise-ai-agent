@@ -120,7 +120,8 @@ def run_evaluation(
 
     # Import retrievers
     from src.itsm_agent.retrieval.bm25_retriever import BM25Retriever
-    from src.itsm_agent.retrieval.hybrid_retriever import HybridRetriever
+    from src.itsm_agent.retrieval.hybrid_retriever import HybridRetriever, HybridResult
+    from src.itsm_agent.retrieval.reranker import reranker_model
 
     # Load chunks for BM25 indexing (must match ChromaDB ingestion)
     # In production, load from the same source used at ingestion time
@@ -152,12 +153,39 @@ def run_evaluation(
         dense_top_k=20
     )
 
+    class RerankerRetriever:
+        """
+        Wraps a base retriever with cross-encoder reranking. Retrieves
+        `candidate_k` candidates from the base, then scores each (query, doc)
+        pair with the cross-encoder and re-orders. Used in the eval to measure
+        the reranker's marginal lift over plain hybrid retrieval.
+        """
+
+        def __init__(self, base, cross_encoder, candidate_k: int = 10):
+            self.base = base
+            self.ce = cross_encoder
+            self.candidate_k = candidate_k
+
+        def retrieve(self, query, top_k=5, department_id=None):
+            candidates = self.base.retrieve(
+                query, top_k=self.candidate_k, department_id=department_id
+            )
+            if not candidates:
+                return []
+            pairs = [[query, c.text] for c in candidates]
+            scores = self.ce.predict(pairs)
+            ranked = sorted(zip(scores, candidates), key=lambda x: x[0], reverse=True)
+            return [c for _, c in ranked[:top_k]]
+
+    hybrid_rerank = RerankerRetriever(hybrid, reranker_model, candidate_k=10)
+
     # Run evaluations
     reports = {}
 
     strategies = {
         "BM25": bm25,
         "Hybrid (RRF)": hybrid,
+        "Hybrid + Reranker (k=10)": hybrid_rerank,
     }
 
     for name, retriever in strategies.items():

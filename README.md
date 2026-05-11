@@ -61,25 +61,48 @@ User Query
 
 ## Retrieval Eval
 
-13-query golden set, evaluated against real ChromaDB chunk IDs. q013 is intentionally out-of-scope and correctly misses for both strategies.
+50-query golden set evaluated against real ChromaDB chunk IDs. Composition:
+13 hand-curated queries plus 37 synthetic queries generated from sampled KB
+chunks (paraphrase-instructed via GPT-4o, stratified across 26 departments)
+and validated — only queries whose source chunk lands in the top-20 of the
+hybrid retriever are accepted, so the eval measures ranking quality rather
+than retrievability. q013 is intentionally out-of-scope and counts as a miss
+across all strategies. The generator is reproducible: `scripts/generate_eval_queries.py --n 37`.
 
 ```
-Strategy                  Hit@1    Hit@3    Hit@5    MRR
-────────────────────────────────────────────────────────
-BM25                      23.1%    61.5%    76.9%   0.454
-Hybrid (RRF)              46.2%    92.3%    92.3%   0.692
-Hybrid + Reranker (k=10)  58.3%   100.0%   100.0%   0.764
+Strategy                     Hit@1    Hit@3    Hit@5     MRR     P@5
+─────────────────────────────────────────────────────────────────────
+BM25                         54.0%    82.0%    88.0%   0.686   0.190
+Hybrid (RRF)                 68.0%    96.0%    96.0%   0.820   0.214
+Hybrid + Reranker (k=10)     80.0%    92.0%    92.0%   0.853   0.198
 ```
 
-Each stage adds measurably. BM25 alone misses paraphrased queries entirely. Adding dense retrieval via RRF gets Hit@3 to 92.3%. Adding the cross-encoder reranker pushes Hit@3 to 100% and MRR from 0.692 to 0.764 — it's promoting the correct doc from rank 2–3 to rank 1 on the harder queries.
+**Headline lifts (50-query eval):**
+- BM25 → Hybrid: Hit@1 +14 points (54.0% → 68.0%), MRR +0.13.
+- Hybrid → Reranker: Hit@1 +12 points (68.0% → 80.0%), MRR +0.03.
+- End-to-end: **1.48× Hit@1** over BM25 baseline; absolute Hit@1 of 80%.
 
-The reranker candidate pool was validated at k=10 vs k=25: identical Hit@3/MRR at both sizes, with k=10 saving ~88ms/query. k=25 adds noise for the reranker to process without contributing any new correct candidates.
+**What the numbers say:**
+- BM25 is stronger here than on the original 13-query set because synthetic
+  queries inherit some vocabulary from their source chunks even with
+  paraphrase instructions — call this out in an interview.
+- The reranker concentrates its lift at Hit@1 and MRR (rank quality),
+  not at Hit@5. In fact Hit@3 drops from 96% to 92% under reranking — the
+  cross-encoder occasionally demotes a borderline-correct chunk that RRF
+  had at rank 4–5 to below position 5. Net win because we ground answers
+  on top-3 and Hit@1/MRR are what the synthesizer sees first.
+- Precision@5 is low (~0.20) by construction: most queries have a single
+  ground-truth chunk, so the maximum achievable P@5 is 0.20.
+
+The reranker candidate pool was validated at k=10 vs k=25: identical
+Hit@3/MRR at both sizes, with k=10 saving ~88ms/query. k=25 adds noise for
+the reranker to process without contributing new correct candidates.
 
 Run evals yourself:
 ```bash
-python src/itsm_agent/eval/run_eval.py \
+python -m src.itsm_agent.eval.run_eval \
   --eval-set src/itsm_agent/eval/eval_set.json \
-  --verbose
+  --chroma-path data/processed/chromadb
 ```
 
 ---

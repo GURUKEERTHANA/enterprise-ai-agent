@@ -2,84 +2,113 @@
   {
     "query_id": "q001",
     "query": "How do I reset my VPN credentials?",
-    "expected_chunk_ids": ["KB0082877_chunk_0"],
+    "expected_chunk_ids": [
+      "KB0082877_chunk_0"
+    ],
     "department_id": "Global Protect",
     "category": "procedural"
   },
   {
     "query_id": "q002",
     "query": "What is the process for requesting a new software license?",
-    "expected_chunk_ids": ["KB0051241_chunk_0", "KB0080552_chunk_12"],
+    "expected_chunk_ids": [
+      "KB0051241_chunk_0",
+      "KB0080552_chunk_12"
+    ],
     "department_id": "ITAM",
     "category": "procedural"
   },
   {
     "query_id": "q003",
     "query": "Outlook is not syncing emails on mobile device",
-    "expected_chunk_ids": ["KB0057047_chunk_0"],
+    "expected_chunk_ids": [
+      "KB0057047_chunk_0"
+    ],
     "department_id": "Outlook",
     "category": "factual"
   },
   {
     "query_id": "q004",
     "query": "password expiry policy for service accounts",
-    "expected_chunk_ids": ["KB0056812_chunk_6"],
+    "expected_chunk_ids": [
+      "KB0056812_chunk_6"
+    ],
     "department_id": "Systems",
     "category": "keyword"
   },
   {
     "query_id": "q005",
     "query": "How do I escalate a P1 incident outside business hours?",
-    "expected_chunk_ids": ["KB0050698_chunk_5"],
+    "expected_chunk_ids": [
+      "KB0050698_chunk_5"
+    ],
     "department_id": "Support",
     "category": "procedural"
   },
   {
     "query_id": "q006",
     "query": "printer not connecting to network after Windows update",
-    "expected_chunk_ids": ["KB0087088_chunk_9", "KB0087088_chunk_7"],
+    "expected_chunk_ids": [
+      "KB0087088_chunk_9",
+      "KB0087088_chunk_7"
+    ],
     "department_id": "Support",
     "category": "factual"
   },
   {
     "query_id": "q007",
     "query": "What SLA applies to hardware replacement requests?",
-    "expected_chunk_ids": ["KB0058890_chunk_13"],
+    "expected_chunk_ids": [
+      "KB0058890_chunk_13"
+    ],
     "department_id": "ITAM",
     "category": "factual"
   },
   {
     "query_id": "q008",
     "query": "multi-factor authentication setup for new employees",
-    "expected_chunk_ids": ["KB0077277_chunk_0"],
+    "expected_chunk_ids": [
+      "KB0077277_chunk_0"
+    ],
     "department_id": "Security",
     "category": "keyword"
   },
   {
     "query_id": "q009",
     "query": "database connection timeout error in production",
-    "expected_chunk_ids": ["KBSGC0000008_chunk_3", "KBSGC0000008_chunk_2"],
+    "expected_chunk_ids": [
+      "KBSGC0000008_chunk_3",
+      "KBSGC0000008_chunk_2"
+    ],
     "department_id": "SGC MID Troubleshooting",
     "category": "keyword"
   },
   {
     "query_id": "q010",
     "query": "What is the data retention policy for incident records?",
-    "expected_chunk_ids": ["KB0056737_chunk_0"],
+    "expected_chunk_ids": [
+      "KB0056737_chunk_0"
+    ],
     "department_id": "Policy",
     "category": "factual"
   },
   {
     "query_id": "q011",
     "query": "How to request access to the finance reporting system?",
-    "expected_chunk_ids": ["KB0085042_chunk_0", "KB0085159_chunk_0", "KB0085054_chunk_0"],
+    "expected_chunk_ids": [
+      "KB0085042_chunk_0",
+      "KB0085159_chunk_0",
+      "KB0085054_chunk_0"
+    ],
     "department_id": "SAP",
     "category": "procedural"
   },
   {
     "query_id": "q012",
     "query": "steps to onboard a new contractor to IT systems",
-    "expected_chunk_ids": ["KB0054699_chunk_8"],
+    "expected_chunk_ids": [
+      "KB0054699_chunk_8"
+    ],
     "department_id": "Contingent Workers",
     "category": "procedural"
   },
@@ -89,5 +118,338 @@
     "expected_chunk_ids": [],
     "department_id": null,
     "category": "out_of_scope"
+  },
+  {
+    "query_id": "q014",
+    "query": "How can employees outside the U.S. request workplace accommodations or remote work exceptions?",
+    "expected_chunk_ids": [
+      "KB0057034_chunk_4"
+    ],
+    "department_id": "Work Persona",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q015",
+    "query": "What should I do if the drop-down menu doesn't have a suitable option for why I couldn't work from the office?",
+    "expected_chunk_ids": [
+      "KB0080752_chunk_8"
+    ],
+    "department_id": "Work Persona",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q016",
+    "query": "What happens if I don't annotate my Workplace Attendance data?",
+    "expected_chunk_ids": [
+      "KB0080752_chunk_15"
+    ],
+    "department_id": "Work Persona",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q017",
+    "query": "What should I do if I can't run anything in Self Service due to missing launch daemons?",
+    "expected_chunk_ids": [
+      "KB0083115_chunk_10"
+    ],
+    "department_id": "ITSM - Client Systems Engineering",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q018",
+    "query": "How do I add a cost center to the GS_Workstation_Privileged_Users group in Active Directory?",
+    "expected_chunk_ids": [
+      "KB0029428_chunk_2"
+    ],
+    "department_id": "ITSM - Client Systems Engineering",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q019",
+    "query": "How can I find and restart an Azure Virtual Desktop using the Surf interface?",
+    "expected_chunk_ids": [
+      "KB0060560_chunk_0"
+    ],
+    "department_id": "ITSM - Client Systems Engineering",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q020",
+    "query": "Who is responsible for conducting reviews and ensuring compliance in Service Request Management?",
+    "expected_chunk_ids": [
+      "KB0088320_chunk_4"
+    ],
+    "department_id": "ITSM - Process",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q021",
+    "query": "How long does it take for Sailpoint to update changes in Active Directory, SURF, and HI?",
+    "expected_chunk_ids": [
+      "KB0049386_chunk_1"
+    ],
+    "department_id": "ITSM - Process",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q022",
+    "query": "What is the process for planning, scheduling, and deploying releases according to the standard in our enterprise?",
+    "expected_chunk_ids": [
+      "KB0095182_chunk_2"
+    ],
+    "department_id": "ITSM - Process",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q023",
+    "query": "What happens if my disability is 25% or more due to an illness or accident?",
+    "expected_chunk_ids": [
+      "KB0051338_chunk_7"
+    ],
+    "department_id": "Benefit Summaries",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q024",
+    "query": "How long is the waiting period if I request after two months of employment?",
+    "expected_chunk_ids": [
+      "KB0051338_chunk_2"
+    ],
+    "department_id": "Benefit Summaries",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q025",
+    "query": "Who is included in the definition of a family unit for insurance purposes?",
+    "expected_chunk_ids": [
+      "KB0051364_chunk_17"
+    ],
+    "department_id": "Benefit Summaries",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q026",
+    "query": "How can I ensure my home address change is updated immediately in payroll and benefits systems?",
+    "expected_chunk_ids": [
+      "KB0087576_chunk_3"
+    ],
+    "department_id": "Personal Information",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q027",
+    "query": "How do I ensure my new profile photo appears across all Office 365 systems?",
+    "expected_chunk_ids": [
+      "KB0048313_chunk_1"
+    ],
+    "department_id": "Personal Information",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q028",
+    "query": "How can I access the organization chart using My ServiceNow or Workday?",
+    "expected_chunk_ids": [
+      "KB0049023_chunk_0"
+    ],
+    "department_id": "Personal Information",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q029",
+    "query": "What needs to be re-qualified if there is a topology update in instance and database?",
+    "expected_chunk_ids": [
+      "KB0082870_chunk_2"
+    ],
+    "department_id": "IQOQ - Qualification",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q030",
+    "query": "Who is responsible for owning the document in the IQOQ qualification process?",
+    "expected_chunk_ids": [
+      "KB0080539_chunk_28"
+    ],
+    "department_id": "IQOQ - Qualification",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q031",
+    "query": "How can customers in regulated industries obtain IQOQ documentation for their cloud-hosted hardware instances?",
+    "expected_chunk_ids": [
+      "KB0082557_chunk_2"
+    ],
+    "department_id": "IQOQ - Qualification",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q032",
+    "query": "How long should it take to send a signed work experience letter after receiving a request?",
+    "expected_chunk_ids": [
+      "KB0088171_chunk_16"
+    ],
+    "department_id": "Employment Verification",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q033",
+    "query": "Where can I find resources for employment verification in our SharePoint system?",
+    "expected_chunk_ids": [
+      "KB0088171_chunk_2"
+    ],
+    "department_id": "Employment Verification",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q034",
+    "query": "Which sections of the form does the Payroll department need to complete?",
+    "expected_chunk_ids": [
+      "KB0088169_chunk_7"
+    ],
+    "department_id": "Employment Verification",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q035",
+    "query": "How can I get support during my performance improvement plan?",
+    "expected_chunk_ids": [
+      "KB0091868_chunk_6"
+    ],
+    "department_id": "Employee Relations",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q036",
+    "query": "What information is available about the Our People Pact for People Managers?",
+    "expected_chunk_ids": [
+      "KB0093956_chunk_0"
+    ],
+    "department_id": "Employee Relations",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q037",
+    "query": "How does ServiceNow support compliance with the Speak Up requirement in our Code of Ethics?",
+    "expected_chunk_ids": [
+      "KB0094376_chunk_1"
+    ],
+    "department_id": "Employee Relations",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q038",
+    "query": "How do I transfer my phone line to ServiceNow using the My ServiceNow Portal in Surf?",
+    "expected_chunk_ids": [
+      "KB0088252_chunk_17"
+    ],
+    "department_id": "Mobility",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q039",
+    "query": "How can I handle a lost or stolen phone according to company policy?",
+    "expected_chunk_ids": [
+      "KB0088252_chunk_14"
+    ],
+    "department_id": "Mobility",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q040",
+    "query": "How do I verify if the EID# matches the information in the ServiceNow ticket?",
+    "expected_chunk_ids": [
+      "KB0091321_chunk_7"
+    ],
+    "department_id": "Mobility",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q041",
+    "query": "How should I inform the ServiceNow Response Team if investigators are present at multiple locations?",
+    "expected_chunk_ids": [
+      "KB0055435_chunk_16"
+    ],
+    "department_id": "Workplace Security",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q042",
+    "query": "How do WPS and GSS teams manage vendor access to network rooms at ServiceNow?",
+    "expected_chunk_ids": [
+      "KB0054541_chunk_0"
+    ],
+    "department_id": "Workplace Security",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q043",
+    "query": "What type of badge should I request for a vendor working onsite three days a week or after-hours?",
+    "expected_chunk_ids": [
+      "KB0050700_chunk_2"
+    ],
+    "department_id": "Workplace Security",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q044",
+    "query": "How do I convert an INR accommodation expense to USD using the exchange rate provided?",
+    "expected_chunk_ids": [
+      "KB0011450_chunk_7"
+    ],
+    "department_id": "Travel and Expense",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q045",
+    "query": "How can I manually match an e-receipt to a credit card in SAP Concur?",
+    "expected_chunk_ids": [
+      "KB0007663_chunk_1"
+    ],
+    "department_id": "Travel and Expense",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q046",
+    "query": "How can I edit cost centers if the option to include all company codes was not selected initially?",
+    "expected_chunk_ids": [
+      "KB0053469_chunk_3"
+    ],
+    "department_id": "Travel and Expense",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q047",
+    "query": "Who is responsible for answering UAE employee questions about benefits policies according to the RACI document?",
+    "expected_chunk_ids": [
+      "KB0091736_chunk_0"
+    ],
+    "department_id": "Benefits Coverage",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q048",
+    "query": "What changes were made to the Japan Work Rules regarding insurance beneficiaries effective January 1, 2025?",
+    "expected_chunk_ids": [
+      "KB0087593_chunk_0"
+    ],
+    "department_id": "Benefits Coverage",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q049",
+    "query": "Who is responsible and accountable for the RACI Related Documents Reports according to the enterprise knowledge base?",
+    "expected_chunk_ids": [
+      "KB0087069_chunk_0"
+    ],
+    "department_id": "Benefits Coverage",
+    "category": "synthetic"
+  },
+  {
+    "query_id": "q050",
+    "query": "What training options are available for using 4 or 5 features/interfaces in the system?",
+    "expected_chunk_ids": [
+      "KB0094461_chunk_3"
+    ],
+    "department_id": "Services Portfolio",
+    "category": "synthetic"
   }
 ]
